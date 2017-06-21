@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
 #include <thrust/copy.h>
+#include <thrust/reduce.h>
 
 using std::cout;
 using std::endl;
@@ -46,12 +48,15 @@ void computeCommunityWeights(I_vec &d_nodes, I_vec &d_neighs, I_vec &d_oWeights,
     I_vec  d_comm_oWeights(d_nodes.size()); 
     I_vec  d_comm_iWeights(d_nodes.size()); 
     
+    thrust::pair<thrust::device_vector<int>::iterator,thrust::device_vector<int>::iterator> new_end;
+
+    new_end = thrust::reduce_by_key(d_nodes.begin(),d_nodes.end(), d_oWeights.begin(), d_comm_iWeights.begin(), d_comm_oWeights.begin());
     // Compute out-degree weights
 
 
     // Compute in-degree weights
 
 
-    thrust::copy(d_nodes.begin(),d_nodes.end(),std::ostream_iterator<int>(std::cout," "));
+    thrust::copy(d_comm_iWeights.begin(),d_comm_iWeights.end(),std::ostream_iterator<int>(std::cout," "));
     return;
 }
