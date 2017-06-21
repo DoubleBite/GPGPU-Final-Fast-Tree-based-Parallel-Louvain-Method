@@ -145,12 +145,3 @@ void printInfo(int* nodes, int* neighborNodes, int* outWeights, int* inWeights, 
 }
 
 
-/*  */
-void checkArrayValues(int* array, int N){
-
-	printf("\n");
-	for(int i=0;i<N;i++)
-		printf("%d", array[i]);
-	printf("\n");
-	
-}
