@@ -28,6 +28,15 @@ void computeModularityGain(thrust::device_vector<float> &d_mod_gains
     , const Dec_vec &d_nodes, const Dec_vec &d_neighs, const Dec_vec &d_oWeights, const Dec_vec &d_iWeights
     , const Dec_vec &d_map, const Dec_vec &d_nWeights, const Dec_vec &d_cWeights);
 
+void findMaxGainNeighbor(Dec_vec &d_nodes, Dec_vec &d_neighs, thrust::device_vector<float> &d_mod_gains);
+
+
+
+
+
+
+
+
 int main(int argc, char* argv[]){
     
     int comm_size = 17;
@@ -89,9 +98,9 @@ int main(int argc, char* argv[]){
 
     computeModularityGain(d_mod_gains, d_nodes, d_neighs, d_oWeights, d_iWeights, d_map, d_nWeights, d_cWeights);
     thrust::copy(d_mod_gains.begin(), d_mod_gains.end(), std::ostream_iterator<float>(std::cout," "));
+    cout<<endl;
 
-
-
+    findMaxGainNeighbor(d_nodes, d_neighs,d_mod_gains);
 
 
 
@@ -197,18 +206,28 @@ void computeModularityGain(thrust::device_vector<float> &d_mod_gains
 
 
 
-void findMaxGainNeighbor(Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_mod_gains){
+void findMaxGainNeighbor(Dec_vec &d_nodes, Dec_vec &d_neighs, thrust::device_vector<float> &d_mod_gains){
 
 
     int array_length = d_nodes.size();
     Dec_vec indices(array_length); 
     thrust::sequence(indices.begin(), indices.end());
 
-// , thrust::greater<int>()
+    thrust::device_vector<float> tmp_gains(d_mod_gains);
 
-    thrust::stable_sort_by_key(tmp_neighs1.begin(),tmp_neighs1.end(),indices.begin());
-    thrust::stable_sort_by_key(tmp_neighs2.begin(),tmp_neighs2.end(),d_nodes.begin());
+    thrust::stable_sort_by_key(tmp_gains.begin(),tmp_gains.end(),indices.begin(), thrust::greater<float>());
+    thrust::stable_sort_by_key(d_mod_gains.begin(),d_mod_gains.end(),d_nodes.begin(), thrust::greater<float>());
+    thrust::stable_sort_by_key(d_nodes.begin(),d_nodes.end(),indices.begin());
+    thrust::gather(indices.begin(), indices.end(), d_neighs.begin(), d_neighs.begin());
 
+    thrust::pair<Dec_vec::iterator,Dec_vec::iterator> new_end;
+    new_end = thrust::unique_by_key(d_nodes.begin(), d_nodes.end(), d_neighs.begin());
+    int new_length = new_end.first - d_nodes.begin();
+
+    thrust::copy(d_nodes.begin(), d_nodes.end(), std::ostream_iterator<int>(std::cout," "));
+    cout<<endl;
+    thrust::copy(d_neighs.begin(), d_neighs.end(), std::ostream_iterator<int>(std::cout," "));
+    cout<<endl;
 
     return;
 }

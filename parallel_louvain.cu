@@ -40,7 +40,14 @@ void onePassLouvain(){
 }
 
 
+void mergeSameCommunity(){
 
+
+
+
+
+	
+}
 
 
 
