@@ -27,17 +27,6 @@ void parallelLouvain(int* h_nodes, int* h_neighbors, int* h_out_weights, int* h_
 
 
 
-void onePassLouvain(){
-
-
-
-
-
-
-
-
-	return;
-}
 
 
 void mergeSameCommunity(){
@@ -46,7 +35,7 @@ void mergeSameCommunity(){
 
 
 
-	
+
 }
 
 
