@@ -18,55 +18,34 @@ __global__ void computeDeltaModularity(float *modularities, int *d_nodes, int *d
 void parallelLouvain(int* h_nodes, int* h_neighbors, int* h_out_weights, int* h_in_weights, int n){
 
 
-	int m=17;
-
-	//
-	int *d_nodes, *d_neighbors, *d_out_weights, *d_in_weights;
-	cudaMalloc((void**)&d_nodes, n*sizeof(int));
-	cudaMalloc((void**)&d_neighbors, n*sizeof(int));
-	cudaMalloc((void**)&d_out_weights, n*sizeof(int));
-	cudaMalloc((void**)&d_in_weights, n*sizeof(int));
-	cudaMemcpy(d_nodes, h_nodes, n*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_neighbors, h_neighbors, n*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_out_weights, h_out_weights, n*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_in_weights, h_in_weights, n*sizeof(int), cudaMemcpyHostToDevice);
-
-
-	// The community-weight mapping arrays
-	int *h_community_out_weights = new int[n], *h_community_in_weights = new int[n];
-	int *d_community_out_weights, *d_community_in_weights;
-	cudaMalloc((void**)&d_community_out_weights, n*sizeof(int));
-	cudaMalloc((void**)&d_community_in_weights, n*sizeof(int));
-	cudaMemset(d_community_out_weights, 0, n* sizeof(int)); // Reset the mappings to 0
-	cudaMemset(d_community_in_weights, 0, n* sizeof(int));
-
-
-	//
-	float *h_modularities = new float[n], *d_modularities;
-	cudaMalloc((void**)&d_modularities, n*sizeof(float));
-	
-	/////////////////////////////////////////////////////////////////////////////////
-	// // Count the community weights
-	countCommOutWeights <<<1, 256>>> (d_community_out_weights, d_nodes, d_out_weights, n);
-	countCommInWeights <<<1, 256>>> (d_community_in_weights, d_nodes, d_in_weights, n);
-
-
-
-	/////////////////////////////////////////////////////////////////////////////////
-	cudaMemcpy(h_community_out_weights, d_community_out_weights, n* sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_community_in_weights, d_community_in_weights, n* sizeof(int), cudaMemcpyDeviceToHost);
-	// printf("%d  ",h_community_out_weights[0]);
-	checkArrayValues(h_community_out_weights, n);
-	checkArrayValues(h_community_in_weights, n);
-
-	computeDeltaModularity <<<1, 256>>> (d_modularities, d_nodes, d_neighbors, d_out_weights, d_in_weights
-	, d_community_out_weights, d_community_in_weights, m, n);
-	cudaMemcpy(h_modularities, d_modularities, n* sizeof(int), cudaMemcpyDeviceToHost);
-	checkArrayValues(h_modularities, n);
 
 
 	return;
 }
+
+
+
+
+
+void onePassLouvain(){
+
+
+
+
+
+
+
+
+	return;
+}
+
+
+
+
+
+
+
+
 
 
 /**
