@@ -1,8 +1,8 @@
-test.cu(46): warning: variable "comm_size" was declared but never referenced
+test.cu(53): warning: variable "comm_size" was declared but never referenced
 
-test.cu(47): warning: variable "array_length" was declared but never referenced
+test.cu(54): warning: variable "array_length" was declared but never referenced
 
-test.cu(46): warning: variable "comm_size" was declared but never referenced
+test.cu(53): warning: variable "comm_size" was declared but never referenced
 
-test.cu(47): warning: variable "array_length" was declared but never referenced
+test.cu(54): warning: variable "array_length" was declared but never referenced
 
