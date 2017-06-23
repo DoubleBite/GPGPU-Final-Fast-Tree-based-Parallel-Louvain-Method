@@ -43,7 +43,7 @@ bool isEnd(const thrust::device_vector<float> &d_mod_gains);
 void assignNewCommunity(Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, thrust::device_vector<float> &d_mod_gains);
 
 
-
+void mergeCommunity(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights);
 
 
 
@@ -77,12 +77,28 @@ int main(int argc, char* argv[]){
 
     int m =10;
 
+    thrust::copy(d_nodes.begin(), d_nodes.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_neighs.begin(), d_neighs.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+
 
     onePassLouvain(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights, d_nodeOWeights, d_nodeIWeights, m);
 
+    mergeCommunity(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights);
 
-
-
+    thrust::copy(d_nodes.begin(), d_nodes.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_neighs.begin(), d_neighs.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
+    thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
+    cout<<endl;
 
     // thrust::copy(d_mod_gains.begin(), d_mod_gains.end(), std::ostream_iterator<float>(std::cout," "));
     // cout<<endl;
@@ -318,3 +334,19 @@ void assignNewCommunity(Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs
 
 
 
+void mergeCommunity(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights){
+
+
+    convertToCommunity(d_comm_map, d_nodes);
+    convertToCommunity(d_comm_map, d_neighs);
+
+    sortByNeighborCommunity(d_nodes, d_neighs, d_oWeights, d_iWeights);
+    int new_length = reduceCommunityWeights(d_nodes, d_neighs, d_oWeights, d_iWeights);
+
+    d_nodes.resize(new_length);
+    d_neighs.resize(new_length);
+    d_oWeights.resize(new_length);
+    d_iWeights.resize(new_length);
+
+    return;
+}
