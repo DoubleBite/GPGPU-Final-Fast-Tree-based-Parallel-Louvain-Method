@@ -1,8 +1,8 @@
-test.cu(53): warning: variable "comm_size" was declared but never referenced
+test.cu(99): warning: variable "proceed" was set but never used
 
-test.cu(54): warning: variable "array_length" was declared but never referenced
+test.cu(152): warning: statement is unreachable
 
-test.cu(53): warning: variable "comm_size" was declared but never referenced
+test.cu(99): warning: variable "proceed" was set but never used
 
-test.cu(54): warning: variable "array_length" was declared but never referenced
+test.cu(152): warning: statement is unreachable
 
