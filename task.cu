@@ -23,11 +23,16 @@ int main(int argc, char* argv[]){
 
 	// Initialize 
 	parseEdgelist(edgelist_file, nodes, neighbors, out_weights, in_weights, n);
-	printInfo(nodes, neighbors, out_weights, in_weights, n);
+	// printInfo(nodes, neighbors, out_weights, in_weights, n);
 
 
-	// 
-	parallelLouvain(nodes, neighbors, out_weights, in_weights, n);
+
+    Dec_vec  d_nodes(nodes, nodes+n); 
+    Dec_vec  d_neighs(neighbors, neighbors+n); 
+    Dec_vec  d_oWeights(out_weights, out_weights+n); 
+    Dec_vec  d_iWeights(in_weights, in_weights+n);
+
+	parallelLouvain(d_nodes, d_neighs, d_oWeights, d_iWeights);
 
 
 
