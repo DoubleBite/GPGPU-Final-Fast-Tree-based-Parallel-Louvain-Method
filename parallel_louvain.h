@@ -1,3 +1,3 @@
+#include "louvain_utils.h"
 
-
-void parallelLouvain(int*, int*, int*, int*, int);
+void parallelLouvain(Dec_vec &, Dec_vec &, Dec_vec &, Dec_vec &);

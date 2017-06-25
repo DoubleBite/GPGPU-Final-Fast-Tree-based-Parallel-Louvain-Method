@@ -1,2 +1,2 @@
-dataset/higgs-social_network.edgelist
-dataset/web-Stanford.txt
+./dataset/higgs-social_network.edgelist
+./dataset/web-Stanford.txt

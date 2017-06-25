@@ -4,6 +4,7 @@
 
 #include "utility.h"
 #include "parallel_louvain.h"
+#include "louvain_utils.h"
 
 using std::cout;
 using std::endl;

@@ -2,7 +2,16 @@
 #include <thrust/execution_policy.h>
 #include <thrust/scatter.h>
 #include "louvain_utils.h"
-
+#include <thrust/unique.h>
+#include <thrust/reduce.h>
+#include <thrust/sort.h>
+#include <thrust/copy.h>
+#include <thrust/transform.h>
+#include <thrust/sequence.h>
+#include <thrust/logical.h>
+#include <thrust/partition.h>
+#include <thrust/extrema.h>
+#include <thrust/device_ptr.h>
 
 void calculateWeights(Dec_vec & d_weight_map, Dec_vec d_nodeID, Dec_vec d_weights){
 
@@ -55,14 +64,14 @@ void sortByFirstTwo(Dec_vec &d_first, Dec_vec &d_second, Dec_vec &d_third, Dec_v
 }
 
 
-void sortByFirstTwo3(Dec_vec &d_first, Dec_vec &d_second, Dec_vec &d_third){
+void sortByFirstTwo3(Dec_vec &d_first, thrust::device_vector<float> &d_second, Dec_vec &d_third){
 
     // Initialize an indices vector
     Dec_vec indices(d_first.size()); 
     thrust::sequence(indices.begin(), indices.end());
 
-    Dec_vec tmp_second1(d_second); 
-    Dec_vec tmp_second2(d_second); 
+    thrust::device_vector<float> tmp_second1(d_second); 
+    thrust::device_vector<float> tmp_second2(d_second); 
 
     thrust::stable_sort_by_key(tmp_second1.begin(), tmp_second1.end(), indices.begin());
     thrust::stable_sort_by_key(tmp_second2.begin(), tmp_second2.end(), d_first.begin());

@@ -1,3 +1,6 @@
+#include <iostream>
+
+
 #include <thrust/copy.h>
 #include <thrust/reduce.h>
 #include <thrust/sort.h>
@@ -9,14 +12,30 @@
 #include <thrust/logical.h>
 #include <thrust/partition.h>
 #include <thrust/extrema.h>
+#include <thrust/device_ptr.h>
 
 #include "parallel_louvain.h"
 #include "louvain_utils.h"
 
+using std::cout;
+using std::endl;
 
 
+int onePassLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec d_oWeights, Dec_vec d_iWeights
+        , int n, int m);
 
+int reassign(Dec_vec &vec);
+void mergeCommunity(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights);
+bool oneIterLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec d_oWeights, Dec_vec d_iWeights
+        , const Dec_vec &d_node_oWeights, const Dec_vec &d_node_iWeights, int m);
 
+void computeModularityGain(thrust::device_vector<float> &d_mod_gains 
+    , const Dec_vec &d_nodes, const Dec_vec &d_neighs, const Dec_vec &d_oWeights, const Dec_vec &d_iWeights
+    , const Dec_vec &d_map, const Dec_vec &d_nodeOWeights, const Dec_vec &d_nodeIWeights
+    , const Dec_vec &d_commOWeights, const Dec_vec &d_commIWeights, const int m);
+bool assignNewCommunity(Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, thrust::device_vector<float> &d_mod_gains);
+void calculateCommunityWeights(Dec_vec  &d_comm_oWeights, Dec_vec  &d_comm_iWeights
+        , const Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights);
 
 /**
 	Host function to perform Louvain's method.
@@ -25,17 +44,17 @@ void parallelLouvain(Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, D
 
     Dec_vec::iterator dev_ptr = thrust::max_element(d_nodes.begin(), d_nodes.end());
     int n1 = *dev_ptr;
-    Dec_vec::iterator dev_ptr = thrust::max_element(d_neighs.begin(), d_neighs.end());
+    dev_ptr = thrust::max_element(d_neighs.begin(), d_neighs.end());
     int n2 = *dev_ptr;
     int n = std::max(n1, n2);
     int m = thrust::reduce(d_oWeights.begin(), d_oWeights.end()) + thrust::reduce(d_iWeights.begin(), d_iWeights.end());
 
     // Generate initial partition
     Dec_vec current_partition(n); 
-    thrust::sequence(indices.begin(), indices.end());
+    thrust::sequence(current_partition.begin(), current_partition.end());
 
     // current partition
-    Dec_vec d_comm_map(current_partition)
+    Dec_vec d_comm_map(current_partition);
 
 
     while(1){
@@ -48,10 +67,10 @@ void parallelLouvain(Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, D
 		n = reassign(d_comm_map);
 
         // Convert to this partition
-        convertToCommunity(d_comm_map, current_partition);
+        convertIDToCommunity(d_comm_map, current_partition);
 
         // Generate data for next round
-        mergeCommunity(d_nodes, d_neighs, d_oWeights, d_iWeights);
+        mergeCommunity(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights);
 
     }
 
@@ -70,15 +89,15 @@ int onePassLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_v
 
 
     // Calculate node weights
-	Dec_vec d_node_oWeights(n);
-	Dec_vec d_node_iWeights(n);
+	Dec_vec d_node_oWeights(n+1);
+	Dec_vec d_node_iWeights(n+1);
 	calculateWeights(d_node_oWeights, d_nodes, d_oWeights);
 	calculateWeights(d_node_iWeights, d_neighs, d_iWeights);
 
     int counter = 0;
     bool is_assign;
     do{
-        is_assign = oneIterLouvain(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights, d_nodeOWeights, d_nodeIWeights, m);
+        is_assign = oneIterLouvain(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights, d_node_oWeights, d_node_iWeights, m);
         counter+=1;
     }while(is_assign);
 
@@ -104,8 +123,8 @@ int reassign(Dec_vec &vec){
 
 
     thrust::scatter(indices.begin(), indices.end(), tmp_vec.begin(), tmp_mapping.begin());
-    auto ff = [=]  __device__ (int x) {return tmp_mapping[x];};
-    thrust::transform(vec.begin(), vec.end(), vec.begin(), ff);
+    convertIDToCommunity(tmp_mapping, vec);
+
 
     return max_comm+1;
 }
@@ -122,7 +141,7 @@ void mergeCommunity(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neig
 
 void FNC(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights){
 
-	convertToCommunity(d_comm_map, d_neighs);
+	convertIDToCommunity(d_comm_map, d_neighs);
     sortByFirstTwo(d_nodes, d_neighs, d_oWeights, d_iWeights);
     reduceByFirstTwo(d_nodes, d_neighs, d_oWeights, d_iWeights);
 
@@ -139,12 +158,12 @@ void FNC(const Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, Dec_vec
 	return;
 }
 
-bool FBM(const Dec_vec &d_nodes, const Dec_vec &d_neighs, const Dec_vec &d_oWeights, const Dec_vec &d_iWeights
-    , Dec_vec &d_map, const Dec_vec &d_nodeOWeights, const Dec_vec &d_nodeIWeights
-    , const Dec_vec &d_commOWeights, const Dec_vec &d_commIWeights, const int m){
+bool FBM(Dec_vec &d_nodes, Dec_vec &d_neighs, const Dec_vec &d_oWeights, const Dec_vec &d_iWeights
+    , Dec_vec &d_comm_map, const Dec_vec &d_node_oWeights, const Dec_vec &d_node_iWeights
+    , const Dec_vec &d_comm_oWeights, const Dec_vec &d_comm_iWeights, const int m){
 
     // Allocate a vector to store modularity gains
-    thrust::device_vector<float> d_mod_gains(new_length);
+    thrust::device_vector<float> d_mod_gains(d_nodes.size());
 
     computeModularityGain(d_mod_gains, d_nodes, d_neighs, d_oWeights, d_iWeights
     , d_comm_map, d_node_oWeights, d_node_iWeights, d_comm_oWeights, d_comm_iWeights, m);
@@ -158,7 +177,6 @@ bool FBM(const Dec_vec &d_nodes, const Dec_vec &d_neighs, const Dec_vec &d_oWeig
     thrust::copy(d_comm_map.begin(), d_comm_map.end(), std::ostream_iterator<int>(std::cout,"  "));
     cout<<endl;
     return is_assign;
-    }
 }
 
 bool oneIterLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec d_oWeights, Dec_vec d_iWeights
@@ -173,7 +191,7 @@ bool oneIterLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_
     int max_comm = *dev_ptr;
     Dec_vec d_comm_oWeights(max_comm+1);
     Dec_vec d_comm_iWeights(max_comm+1);
-    calculateCommunityWeights(d_comm_oWeights, d_comm_iWeights, d_comm_map, d_node_oWeights, d_node_iWeights);
+    calculateCommunityWeights(d_comm_oWeights, d_comm_iWeights, d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights);
 
 	bool is_assign = FBM(d_nodes, d_neighs, d_oWeights, d_iWeights
     					, d_comm_map, d_node_oWeights, d_node_iWeights, d_comm_oWeights, d_comm_iWeights, m);
@@ -186,12 +204,12 @@ bool oneIterLouvain(Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_
 
 
 void calculateCommunityWeights(Dec_vec  &d_comm_oWeights, Dec_vec  &d_comm_iWeights
-        , const Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec &d_node_oWeights, Dec_vec &d_node_iWeights){
+        , const Dec_vec &d_comm_map, Dec_vec d_nodes, Dec_vec d_neighs, Dec_vec &d_oWeights, Dec_vec &d_iWeights){
 
     convertIDToCommunity(d_comm_map, d_nodes);
     convertIDToCommunity(d_comm_map, d_neighs);
 	calculateWeights(d_comm_oWeights, d_nodes, d_oWeights);
-	calculateWeights(d_comm_iWeights, d_neighs, d_node_iWeights);
+	calculateWeights(d_comm_iWeights, d_neighs, d_iWeights);
 
     return;
 }
@@ -264,17 +282,18 @@ bool isEnd(const thrust::device_vector<float> &d_mod_gains){
 bool assignNewCommunity(Dec_vec &d_comm_map, Dec_vec &d_nodes, Dec_vec &d_neighs, thrust::device_vector<float> &d_mod_gains){
 
 	sortByFirstTwo3(d_nodes, d_mod_gains, d_neighs);
-    thrust::pair<Dec_vec::iterator,Dec_vec::iterator> new_end;
+    thrust::pair<Dec_vec::iterator, thrust::device_vector<float>::iterator> new_end1;
+    thrust::pair<Dec_vec::iterator,Dec_vec::iterator> new_end2;
 
     Dec_vec tmp(d_nodes.size());
-    new_end = thrust::unique_by_key_copy(d_nodes.begin(), d_nodes.end(), d_mod_gains.begin(), tmp.begin(), d_mod_gains.begin());
+    new_end1 = thrust::unique_by_key_copy(d_nodes.begin(), d_nodes.end(), d_mod_gains.begin(), tmp.begin(), d_mod_gains.begin());
 
-    int new_length = new_end.second - d_mod_gains.begin();
+    int new_length = new_end1.first - tmp.begin();
     int sum = thrust::reduce(d_mod_gains.begin(), d_mod_gains.begin() + new_length);
     if(sum<=0)
         return false;
     else{
-        new_end = thrust::unique_by_key_copy(d_nodes.begin(), d_nodes.end(), d_neighs.begin(), d_nodes.begin(), d_comm_map.begin());
+        new_end2 = thrust::unique_by_key_copy(d_nodes.begin(), d_nodes.end(), d_neighs.begin(), d_nodes.begin(), d_comm_map.begin());
         return true;
     }
     

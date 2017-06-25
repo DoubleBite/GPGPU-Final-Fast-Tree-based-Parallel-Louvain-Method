@@ -1,8 +1,0 @@
-test.cu(115): warning: variable "proceed" was set but never used
-
-test.cu(166): warning: statement is unreachable
-
-test.cu(115): warning: variable "proceed" was set but never used
-
-test.cu(166): warning: statement is unreachable
-
