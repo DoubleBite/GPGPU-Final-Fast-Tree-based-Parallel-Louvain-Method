@@ -1,0 +1,3 @@
+/tmp/tmpxft_00004a56_00000000-16_main.o: In function `main':
+tmpxft_00004a56_00000000-4_main.cudafe1.cpp:(.text+0x95): undefined reference to `parseEdgelist(char*, std::vector<int, std::allocator<int> >&, std::vector<int, std::allocator<int> >&, std::vector<int, std::allocator<int> >&, std::vector<int, std::allocator<int> >&)'
+collect2: error: ld returned 1 exit status

@@ -8,3 +8,4 @@ void convertIDToCommunity(const Dec_vec &, Dec_vec &);
 void sortByFirstTwo(Dec_vec &, Dec_vec &, Dec_vec &, Dec_vec &);
 void sortByFirstTwo3(Dec_vec &, thrust::device_vector<float> &, Dec_vec &);
 void reduceByFirstTwo(Dec_vec &, Dec_vec &, Dec_vec &, Dec_vec &);
+int reassign(Dec_vec &vec);

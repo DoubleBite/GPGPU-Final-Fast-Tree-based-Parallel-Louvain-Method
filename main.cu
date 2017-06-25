@@ -1,71 +1,41 @@
 #include <iostream>
-#include <vector>
-#include <thrust/device_vector.h>
-#include <thrust/device_ptr.h>
 
+#include "global.h"
+#include "preprocessing.h"
+#include "parallel_louvain.h"
 
 using std::cout;
 using std::endl;
 
-typedef thrust::device_vector<int> Dec_vec;
 
 
 
 
 int main(int argc, char* argv[]){
     
-    // Test data on host
-    std::vector<int> h_nodes = {0,0,0,0,1,1,2,2,2,3,3,3,3,3,3,4,4,4};
-    std::vector<int> h_neighs = {1,2,3,4,0,3,0,3,5,0,1,2,4,6,11,0,3,5};
-    std::vector<int> h_oWeights = {1,1,1,1,0,1,0,0,0,0,0,1,0,1,1,0,1,1};
-    std::vector<int> h_iWeights = {0,0,0,0,1,0,1,1,1,1,1,0,1,0,0,1,0,0};
+    // Parse edgelist end store them in vectors.
+	char *edgelist_file = argv[1];
+    Host_vec h_nodes;
+    Host_vec h_neighs;
+    Host_vec h_oWeights;
+    Host_vec h_iWeights;
+    parseEdgelist(edgelist_file, h_nodes, h_neighs, h_oWeights, h_iWeights);
 
-    std::vector<int> h_map = {0,1,0,1,2,2,1,3,3,3,3,3,3};
-
-    // Test data on device
+    // Convert host vectors to device vectors
     Dec_vec  d_nodes(h_nodes); 
     Dec_vec  d_neighs(h_neighs); 
     Dec_vec  d_oWeights(h_oWeights); 
-    Dec_vec  d_iWeights(h_iWeights);
-
-    Dec_vec  d_comm_map(h_map);
+    Dec_vec  d_iWeights(h_iWeights);   
 
 
-    std::vector<int> h_nOWeights = {2,0,3,5,3,1};
-    std::vector<int> h_nIWeights = {2,0,2,6,3,0};
-
-    Dec_vec  d_nodeOWeights(h_nOWeights); 
-    Dec_vec  d_nodeIWeights(h_nIWeights); 
+    // Parallel Louvain approach
+	parallelLouvain(d_nodes, d_neighs, d_oWeights, d_iWeights);
 
 
-
-    int m =10;
-
-    thrust::copy(d_nodes.begin(), d_nodes.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_neighs.begin(), d_neighs.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-
-
-    onePassLouvain(d_comm_map, d_nodes, d_neighs, d_oWeights, d_iWeights, d_nodeOWeights, d_nodeIWeights, m);
-
-
-    thrust::copy(d_nodes.begin(), d_nodes.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_neighs.begin(), d_neighs.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-    thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    cout<<endl;
-
-    // thrust::copy(d_mod_gains.begin(), d_mod_gains.end(), std::ostream_iterator<float>(std::cout," "));
+    // thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
     // cout<<endl;
-
+    // thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
+    // cout<<endl;
 
 
 

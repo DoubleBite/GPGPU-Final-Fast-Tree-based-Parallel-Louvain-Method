@@ -73,8 +73,8 @@ void sortByFirstTwo3(Dec_vec &d_first, thrust::device_vector<float> &d_second, D
     thrust::device_vector<float> tmp_second1(d_second); 
     thrust::device_vector<float> tmp_second2(d_second); 
 
-    thrust::stable_sort_by_key(tmp_second1.begin(), tmp_second1.end(), indices.begin());
-    thrust::stable_sort_by_key(tmp_second2.begin(), tmp_second2.end(), d_first.begin());
+    thrust::stable_sort_by_key(tmp_second1.begin(), tmp_second1.end(), indices.begin(), thrust::greater<float>());
+    thrust::stable_sort_by_key(tmp_second2.begin(), tmp_second2.end(), d_first.begin(), thrust::greater<float>());
     thrust::stable_sort_by_key(d_first.begin(), d_first.end(), indices.begin());
 
     thrust::gather(indices.begin(), indices.end(), d_second.begin(), d_second.begin());
@@ -122,3 +122,26 @@ void reduceByFirstTwo(Dec_vec &d_first, Dec_vec &d_second, Dec_vec &d_third, Dec
 }
 
 
+
+int reassign(Dec_vec &vec){
+
+    // Sort and compact the vector to get total size
+    Dec_vec tmp_vec(vec);
+    thrust::sort(tmp_vec.begin(),tmp_vec.end());
+    Dec_vec::iterator new_end = thrust::unique(tmp_vec.begin(),tmp_vec.end());
+    tmp_vec.resize(new_end-tmp_vec.begin());
+    
+    // Create a mapping
+    Dec_vec indices(tmp_vec.size()); 
+    thrust::sequence(indices.begin(), indices.end());    
+    Dec_vec::iterator dev_ptr = thrust::max_element(tmp_vec.begin(), tmp_vec.end());
+    int max = *dev_ptr;
+    Dec_vec tmp_mapping(max+1);
+    thrust::scatter(indices.begin(), indices.end(), tmp_vec.begin(), tmp_mapping.begin());
+
+    // Convert according to the mapping
+    convertIDToCommunity(tmp_mapping, vec);
+
+    // Return the total orders.
+    return max+1;
+}
