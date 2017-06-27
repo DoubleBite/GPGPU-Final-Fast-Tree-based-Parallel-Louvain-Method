@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include "Timer.h"
 #include "global.h"
 #include "preprocessing.h"
 #include "parallel_louvain.h"
@@ -13,6 +13,8 @@ using std::endl;
 
 int main(int argc, char* argv[]){
     
+	Timer timer_count_position;
+
     // Parse edgelist end store them in vectors.
 	char *edgelist_file = argv[1];
     Host_vec h_nodes;
@@ -20,6 +22,11 @@ int main(int argc, char* argv[]){
     Host_vec h_oWeights;
     Host_vec h_iWeights;
     parseEdgelist(edgelist_file, h_nodes, h_neighs, h_oWeights, h_iWeights);
+
+
+    // Count time
+	timer_count_position.Start();
+    
 
     // Convert host vectors to device vectors
     Dec_vec  d_nodes(h_nodes); 
@@ -32,11 +39,9 @@ int main(int argc, char* argv[]){
 	parallelLouvain(d_nodes, d_neighs, d_oWeights, d_iWeights);
 
 
-    // thrust::copy(d_oWeights.begin(), d_oWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    // cout<<endl;
-    // thrust::copy(d_iWeights.begin(), d_iWeights.end(), std::ostream_iterator<int>(std::cout,"  "));
-    // cout<<endl;
-
+    // Count time
+	timer_count_position.Pause();
+	printf_timer(timer_count_position);
 
 
 	return 0;
