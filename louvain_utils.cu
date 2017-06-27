@@ -143,5 +143,5 @@ int reassign(Dec_vec &vec){
     convertIDToCommunity(tmp_mapping, vec);
 
     // Return the total orders.
-    return max+1;
+    return indices.size();
 }
