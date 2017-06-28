@@ -1,0 +1,24 @@
+div.container{
+   background-color: teal;
+   width:100%; 
+   height: 200px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+}
+
+div.container h1{
+    display:
+}
+
+div.jumbotron{
+    padding:0px;
+}
+body{
+
+    background-image: url(https://ai2-s2-public.s3.amazonaws.com/figures/2016-11-08/68edf1d4c57163116c33aec817cc4838d3fcf88a/4-Figure4-1.png);
+}
+
+div {
+
+}
