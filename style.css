@@ -18,8 +18,10 @@ body{
    /*margin:0;
    padding:0;*/
     /* background-image: url(https://ai2-s2-public.s3.amazonaws.com/figures/2016-11-08/68edf1d4c57163116c33aec817cc4838d3fcf88a/4-Figure4-1.png);*/
-   background-image: url(http://i.imgur.com/w9xAnAF.png) center fixed no-repeat;
-   -moz-background-size: cover;
+   background-image: url(http://i.imgur.com/w9xAnAF.png);
+   background-repeat: no-repeat; 
+   background-position: center center; 
+   /*-moz-background-size: cover;*/
    background-size: cover;
 }
 
